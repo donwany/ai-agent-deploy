@@ -1,8 +1,6 @@
 from pydantic_ai import Agent
 from pydantic_ai.builtin_tools import CodeExecutionTool, WebSearchTool
-from pydantic_ai.mcp import MCPServerStdio
 from pydantic_ai.models.openai import OpenAIResponsesModel
-import json
 import logfire
 from dotenv import load_dotenv
 import os
@@ -47,30 +45,33 @@ def get_weather_weatherapi(city: str) -> str:
 
 
 # Initialize fetch mcp server
-fetch_server = MCPServerStdio("python", ["-m", "mcp_server_fetch"])
+# fetch_server = MCPServerStdio("python", ["-m", "mcp_server_fetch"])
 
 
 # Initialize filesystem mcp server
-filesystem_server = MCPServerStdio(
-    command="npx",
-    args=[
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "/mnt/",  # directory you want to expose
-    ],
-)
+# filesystem_server = MCPServerStdio(
+#     command="npx",
+#     args=[
+#         "-y",
+#         "@modelcontextprotocol/server-filesystem",
+#         "/mnt/",  # directory you want to expose
+#     ],
+# )
 
 # search mcp server
-tavily_server = MCPServerStdio(
-    command="npx",
-    args=["-y", "tavily-mcp@latest"],
-    env={
-        "TAVILY_API_KEY": os.getenv("TAVILY_API_KEY"),
-        "DEFAULT_PARAMETERS": json.dumps(
-            {"include_images": True, "max_results": 15, "search_depth": "advanced"}
-        ),
-    },
-)
+# tavily_server = MCPServerStdio(
+#     command="npx",
+#     args=["-y", "tavily-mcp@latest"],
+#     env={
+#         "TAVILY_API_KEY": os.getenv("TAVILY_API_KEY"),
+#         "DEFAULT_PARAMETERS": json.dumps(
+#             {"include_images": True, "max_results": 15, "search_depth": "advanced"}
+#         ),
+#     },
+# )
+# NOTE: MCP servers disabled for serverless deployment (Render)
+# Stdio-based MCP servers don't work reliably in serverless environments
+# Using WebSearchTool (builtin) instead for search functionality
 
 
 # Create the agent
@@ -81,11 +82,10 @@ agent = Agent(
     model=model,
     tools=[get_weather_weatherapi],
     instructions="Be concise, reply with one sentence. "
-    "You have access to: Fetch (web requests), Filesystem, Web Search (Tavily), and Weather lookup. "
+    "You have access to: Web Search and Weather lookup. "
     "Use these tools to answer questions and retrieve information.",
     retries=5,
     output_retries=5,
-    toolsets=[fetch_server, filesystem_server, tavily_server],
     tool_timeout=300,
     builtin_tools=[CodeExecutionTool(), WebSearchTool()],
 )
