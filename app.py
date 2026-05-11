@@ -10,7 +10,7 @@ import httpx
 
 
 load_dotenv(".env", override=True)
-logfire.configure(token=os.getenv('LOGFIRE_TOKEN'))
+logfire.configure(token=os.getenv('LOGFIRE_TOKEN'), send_to_logfire=True)
 logfire.instrument_pydantic_ai()
 logfire.instrument_httpx(capture_all=True)
 
