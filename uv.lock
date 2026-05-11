@@ -612,6 +612,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "httpx" },
+    { name = "logfire" },
     { name = "mcp-server-fetch" },
     { name = "pydantic-ai" },
     { name = "python-dotenv" },
@@ -621,6 +622,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
+    { name = "logfire", specifier = ">=4.32.1" },
     { name = "mcp-server-fetch", specifier = ">=2025.1.17" },
     { name = "pydantic-ai", specifier = ">=1.93.0" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
