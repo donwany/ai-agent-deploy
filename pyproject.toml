@@ -9,6 +9,7 @@ dependencies = [
     "logfire>=4.32.1",
     "mcp-server-fetch>=2025.1.17",
     "pydantic-ai>=1.93.0",
+    "pydantic-ai-shields>=0.3.2",
     "python-dotenv>=1.2.2",
     "uvicorn>=0.46.0",
 ]

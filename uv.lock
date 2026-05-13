@@ -615,6 +615,7 @@ dependencies = [
     { name = "logfire" },
     { name = "mcp-server-fetch" },
     { name = "pydantic-ai" },
+    { name = "pydantic-ai-shields" },
     { name = "python-dotenv" },
     { name = "uvicorn" },
 ]
@@ -625,6 +626,7 @@ requires-dist = [
     { name = "logfire", specifier = ">=4.32.1" },
     { name = "mcp-server-fetch", specifier = ">=2025.1.17" },
     { name = "pydantic-ai", specifier = ">=1.93.0" },
+    { name = "pydantic-ai-shields", specifier = ">=0.3.2" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "uvicorn", specifier = ">=0.46.0" },
 ]
@@ -2195,6 +2197,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/84/31/65e4884ecc0a46d1225d1f595b4d8a12a5ff29d7cde604f5359757742ed5/pydantic_ai-1.93.0.tar.gz", hash = "sha256:46dac515a695c7632afba82ce353ad900b833a3dae176357ac1efa43f00fab59", size = 13146, upload-time = "2026-05-09T00:23:23.21Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3a/0e/82428ac241ed0c412f73333867ad4a4aa81b67ba27589c27c58888b54ff9/pydantic_ai-1.93.0-py3-none-any.whl", hash = "sha256:2a86ea557da1a455080d3635fa5278ff6c2a8d32aea5854aa659b24d86f6755a", size = 7581, upload-time = "2026-05-09T00:23:13.902Z" },
+]
+
+[[package]]
+name = "pydantic-ai-shields"
+version = "0.3.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "genai-prices" },
+    { name = "pydantic" },
+    { name = "pydantic-ai-slim" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9f/db/dbb444de1368eb6712553d0eb083edd56c851fead2d3f3be933b8dc8ba43/pydantic_ai_shields-0.3.2.tar.gz", hash = "sha256:1bddaca4a9f49aff22d3e0a433f2b0a77a67019427dabb150753c9f45f138dde", size = 388798, upload-time = "2026-05-05T11:24:48.079Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/89/90/225ff60043f94b3f40aac17163d6d5c3d11da3efee4e89d5834ecd8f6d25/pydantic_ai_shields-0.3.2-py3-none-any.whl", hash = "sha256:43e7a66cf82b3fb479332c282e39a052c87eb3a0f7e0b862fa18704df162fc38", size = 15662, upload-time = "2026-05-05T11:24:45.899Z" },
 ]
 
 [[package]]

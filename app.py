@@ -1,19 +1,57 @@
+import datetime
+import os
+
+import httpx
+import logfire
+import uvicorn
+from dotenv import load_dotenv
+from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 from pydantic_ai.builtin_tools import CodeExecutionTool, WebSearchTool
-from pydantic_ai.models.openai import OpenAIResponsesModel
-import logfire
-from dotenv import load_dotenv
-import os
-import httpx
+from pydantic_ai.models.openai import (OpenAIResponsesModel,
+                                       OpenAIResponsesModelSettings)
+from pydantic_ai_shields import (AsyncGuardrail, BlockedKeywords,
+                                 BudgetExceededError, CostTracking,
+                                 GuardrailError, InputBlocked, InputGuard,
+                                 NoRefusals, OutputBlocked, OutputGuard,
+                                 PiiDetector, PromptInjection, SecretRedaction,
+                                 ToolBlocked, ToolGuard)
 
+from utils import INSTRUCTIONS, KEYWORDS
 
 load_dotenv(".env", override=True)
-logfire.configure(token=os.getenv('LOGFIRE_TOKEN'), send_to_logfire=True)
+logfire.configure(token=os.getenv("LOGFIRE_TOKEN"), send_to_logfire=True)
 logfire.instrument_pydantic_ai()
 logfire.instrument_httpx(capture_all=True)
 
 # model
-model = OpenAIResponsesModel("gpt-4o-mini")
+model_settings = OpenAIResponsesModelSettings(
+    temperature=0.2,
+    max_tokens=500,
+    top_p=1,
+    frequency_penalty=0,
+    presence_penalty=0,
+)
+
+model = OpenAIResponsesModel("gpt-4o-mini", settings=model_settings)
+
+
+class ResponseModel(BaseModel):
+    """Structured response with metadata."""
+
+    response: str = Field(description="The agent's response to the user's query")
+    needs_escalation: bool = Field(
+        description="Whether the issue needs to be escalated to a human agent"
+    )
+    follow_up_required: bool = Field(description="Whether a follow-up is required")
+    sentiment: str = Field(
+        description="The sentiment of the customer's message, e.g., positive, negative, neutral"
+    )
+
+
+def get_current_datetime():
+    """Get the current date and time."""
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def get_weather_weatherapi(city: str) -> str:
@@ -44,64 +82,53 @@ def get_weather_weatherapi(city: str) -> str:
         return f"Error fetching weather: {str(e)}"
 
 
-# Initialize fetch mcp server
-# fetch_server = MCPServerStdio("python", ["-m", "mcp_server_fetch"])
-
-
-# Initialize filesystem mcp server
-# filesystem_server = MCPServerStdio(
-#     command="npx",
-#     args=[
-#         "-y",
-#         "@modelcontextprotocol/server-filesystem",
-#         "/mnt/",  # directory you want to expose
-#     ],
-# )
-
-# search mcp server
-# tavily_server = MCPServerStdio(
-#     command="npx",
-#     args=["-y", "tavily-mcp@latest"],
-#     env={
-#         "TAVILY_API_KEY": os.getenv("TAVILY_API_KEY"),
-#         "DEFAULT_PARAMETERS": json.dumps(
-#             {"include_images": True, "max_results": 15, "search_depth": "advanced"}
-#         ),
-#     },
-# )
-# NOTE: MCP servers disabled for serverless deployment (Render)
-# Stdio-based MCP servers don't work reliably in serverless environments
-# Using WebSearchTool (builtin) instead for search functionality
-
-
 # Create the agent
 agent = Agent(
-    name="world_boss_agent",
-    description="An agent that answers RANDOM questions.",
+    name="elbowpay_faq_agent",
+    description="An agent that answers FAQ questions.",
     output_type=str,
     model=model,
-    tools=[get_weather_weatherapi],
-    instructions="Be concise, reply with one sentence. "
-    "You have access to: Web Search and Weather lookup. "
-    "Use these tools to answer questions and retrieve information.",
+    tools=[get_weather_weatherapi, get_current_datetime],
+    instructions=f"{INSTRUCTIONS}",
     retries=5,
     output_retries=5,
-    tool_timeout=300,
-    builtin_tools=[CodeExecutionTool(), WebSearchTool()],
+    capabilities=[
+        InputGuard(guard=lambda prompt: "jailbreak" not in prompt.lower()),
+        InputGuard(
+            guard=lambda prompt: "ignore all instructions" not in prompt.lower()
+        ),
+        # block and detect prompt injection
+        PromptInjection(sensitivity="high"),  # "low" | "medium" | "high"
+        # Detect PII (email, phone, SSN, credit card, IP) in user input:
+        PiiDetector(
+            detect=["email", "ssn", "credit_card", "phone", "ip"], action="block"
+        ),
+        # Block prompts containing forbidden words or phrases:
+        BlockedKeywords(
+            keywords=KEYWORDS,
+            whole_words=True,
+        ),
+        NoRefusals(patterns=[r"I cannot", r"I'm not able to", r"outside my scope"]),
+    ],
+    # tool_timeout=300,
+    # builtin_tools=[CodeExecutionTool(), WebSearchTool()],
 )
 
 
 def main():
-    app = agent.to_web(
-        models=[
-            "openai:gpt-4o-mini",
-            "openai:gpt-4o",
-            "openai:gpt-3.5-turbo",
-            "openai:gpt-3.5-turbo-16k",
-        ]
-    )
-
-    import uvicorn
+    try:
+        app = agent.to_web(
+            models=[
+                "openai:gpt-4o-mini",
+                # "openai:gpt-4o",
+                # "openai:gpt-3.5-turbo",
+                # "openai:gpt-3.5-turbo-16k",
+            ]
+        )
+    except InputGuard as e:
+        print(f"Input blocked: {e}")
+    except GuardrailError as e:
+        print(f"Guardrail error: {e}")
 
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
 
