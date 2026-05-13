@@ -8,14 +8,24 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 from pydantic_ai.builtin_tools import CodeExecutionTool, WebSearchTool
-from pydantic_ai.models.openai import (OpenAIResponsesModel,
-                                       OpenAIResponsesModelSettings)
-from pydantic_ai_shields import (AsyncGuardrail, BlockedKeywords,
-                                 BudgetExceededError, CostTracking,
-                                 GuardrailError, InputBlocked, InputGuard,
-                                 NoRefusals, OutputBlocked, OutputGuard,
-                                 PiiDetector, PromptInjection, SecretRedaction,
-                                 ToolBlocked, ToolGuard)
+from pydantic_ai.models.openai import OpenAIResponsesModel, OpenAIResponsesModelSettings
+from pydantic_ai_shields import (
+    AsyncGuardrail,
+    BlockedKeywords,
+    BudgetExceededError,
+    CostTracking,
+    GuardrailError,
+    InputBlocked,
+    InputGuard,
+    NoRefusals,
+    OutputBlocked,
+    OutputGuard,
+    PiiDetector,
+    PromptInjection,
+    SecretRedaction,
+    ToolBlocked,
+    ToolGuard,
+)
 
 from utils import INSTRUCTIONS, KEYWORDS
 
@@ -93,6 +103,7 @@ agent = Agent(
     retries=5,
     output_retries=5,
     capabilities=[
+        CostTracking(budget_usd=1.0),
         InputGuard(guard=lambda prompt: "jailbreak" not in prompt.lower()),
         InputGuard(
             guard=lambda prompt: "ignore all instructions" not in prompt.lower()
@@ -110,8 +121,6 @@ agent = Agent(
         ),
         NoRefusals(patterns=[r"I cannot", r"I'm not able to", r"outside my scope"]),
     ],
-    # tool_timeout=300,
-    # builtin_tools=[CodeExecutionTool(), WebSearchTool()],
 )
 
 
@@ -120,9 +129,9 @@ def main():
         app = agent.to_web(
             models=[
                 "openai:gpt-4o-mini",
-                # "openai:gpt-4o",
-                # "openai:gpt-3.5-turbo",
-                # "openai:gpt-3.5-turbo-16k",
+                "openai:gpt-4o",
+                "openai:gpt-3.5-turbo",
+                "openai:gpt-3.5-turbo-16k",
             ]
         )
     except InputGuard as e:
